@@ -3,3 +3,8 @@ node_modules/
 data/*.sqlite
 data/*.sqlite-*
 coverage/
+.env.*
+!.env.example
+dist/
+*.log
+.DS_Store

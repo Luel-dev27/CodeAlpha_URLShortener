@@ -4,19 +4,22 @@
   "description": "CodeAlpha internship URL shortener backend",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test"
+    "test": "node --test test/*.test.js",
+    "test:integration": "node --test test/frontend.integration.js",
+    "test:browser": "node --test test/browser.integration.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "better-sqlite3": "^12.11.1",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
+    "express-rate-limit": "^8.7.4",
     "helmet": "^8.3.0",
     "nanoid": "^5.1.16",
     "zod": "^4.6.7"
@@ -24,7 +27,11 @@
   "allowScripts": {
     "better-sqlite3@12.11.1": true
   },
-  "devDependencies": {
-    "nodemon": "^3.1.14"
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Luel-dev27/CodeAlpha_URLShortener.git"
   }
 }

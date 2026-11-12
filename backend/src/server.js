@@ -1,23 +1,52 @@
-require('dotenv').config();
-const { createApp } = require('./app');
+import "dotenv/config";
+import { createApp } from "./app.js";
+import { loadConfig } from "./config/environment.js";
 
-const port = Number.parseInt(process.env.PORT || '5000', 10);
-if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a valid TCP port');
-
-const { app, db } = createApp();
-const server = app.listen(port, () => console.log(`URL shortener listening on port ${port}`));
+let db;
+let server;
 let shuttingDown = false;
 
 function shutdown(signal) {
   if (shuttingDown) return;
   shuttingDown = true;
   console.log(`${signal} received; shutting down`);
+  const timeout = setTimeout(() => {
+    console.error("Graceful shutdown timed out");
+    process.exit(1);
+  }, 10000);
+  timeout.unref();
   server.close((error) => {
-    try { db.close(); } catch (closeError) { console.error(closeError); process.exitCode = 1; }
-    if (error) { console.error(error); process.exitCode = 1; }
+    clearTimeout(timeout);
+    try {
+      db.close();
+    } catch {
+      console.error("Database close failed");
+      process.exitCode = 1;
+    }
+    if (error) {
+      console.error("HTTP server close failed");
+      process.exitCode = 1;
+    }
   });
-  setTimeout(() => { console.error('Graceful shutdown timed out'); process.exit(1); }, 10000).unref();
 }
 
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+try {
+  const config = loadConfig();
+  const instance = createApp(config);
+  db = instance.db;
+  server = instance.app.listen(config.port, () =>
+    console.log(`URL shortener listening on port ${config.port}`),
+  );
+  server.on("error", (error) => {
+    console.error(`HTTP server failed (${error.code || "unknown error"})`);
+    db.close();
+    process.exitCode = 1;
+  });
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+} catch {
+  console.error(
+    "Startup failed. Check environment configuration, database path, and filesystem permissions.",
+  );
+  process.exitCode = 1;
+}
